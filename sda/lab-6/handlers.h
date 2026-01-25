@@ -8,7 +8,7 @@ extern Queue *queue;
 typedef struct {
     char model[50];
     char country[30];
-    int manufacturingDate;
+    char manufacturingDate[11];
     int enginePower;
     double cost;
     Node link;

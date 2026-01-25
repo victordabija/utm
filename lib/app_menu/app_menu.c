@@ -26,7 +26,7 @@ static void displayMenu(const Menu *menu) {
     for (int i = 0; i < menu->count; i++) {
         printf("[%2d] %s\n", menu->items[i].id, menu->items[i].text);
     }
-    printf("[ 0] Exit\nSelection > ");
+    printf("[ 0] Exit\n");
 }
 
 static void bye() {
@@ -41,7 +41,6 @@ static void runMenuItem(const MenuItem *item) {
 
     printf("\nPress Enter to return to menu...");
     getchar(); // catch the newline from scanf
-    getchar(); // wait for actual enter
 }
 
 void initMenu(Menu *menu, const char *title, MenuItem *items, const int count) {
@@ -62,17 +61,7 @@ void runMenu(const Menu *menu) {
     while (choice != 0) {
         displayMenu(menu);
 
-        /*
-         * Handle invalid input:
-         * If scanf fails (user typed a letter), clear the input buffer
-         * to prevent an infinite loop and restart the menu.
-         */
-        if (scanf("%d", &choice) != 1) {
-            do {
-            } while (getchar() != '\n');
-
-            continue;
-        }
+        choice = readInt("Selection > ", 0, menu->count);
 
         if (choice == 0) {
             bye();

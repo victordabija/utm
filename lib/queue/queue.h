@@ -38,4 +38,13 @@ Node *getAt(const Queue *q, int index);
 
 void each(Queue *q, void (*callback)(Node *, int));
 
+Queue *filter(Queue *q, bool (*predicate)(Node *, void *), void *ctx, Node *(*clone)(Node *n));
+
+typedef enum {
+    SORT_ASC = 1,
+    SORT_DESC = -1
+} SortDirection;
+
+void sortQueue(Queue *queue, int (*compare)(Node *a, Node *b), void (*swap)(Node *a, Node *b), SortDirection direction);
+
 #endif /* UTM_QUEUE_H */

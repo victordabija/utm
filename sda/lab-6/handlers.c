@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <math.h>
 #include <string.h>
 #include <time.h>
 
@@ -8,11 +7,31 @@
 #include "handlers.h"
 #include "application.h"
 
+static Car *getCarByNode(Node *node);
+
+static Car *readCar();
+
 static void destroyCar(Node *node);
 
 static void displayCar(Node *node, int index);
 
 static void swapCars(Node *nodeA, Node *nodeB);
+
+static Node *cloneCar(Node *node);
+
+static int compareByModel(Node *nodeA, Node *nodeB);
+
+static int compareByCountry(Node *nodeA, Node *nodeB);
+
+static int compareByDate(Node *nodeA, Node *nodeB);
+
+static int compareByPower(Node *nodeA, Node *nodeB);
+
+static int compareByCost(Node *nodeA, Node *nodeB);
+
+static bool matchModel(Node *node, void *ctx);
+
+static bool matchCountry(Node *node, void *ctx);
 
 void handleCreateList() {
     if (queue) {
@@ -30,24 +49,14 @@ void handleInputData() {
         return;
     }
 
-    Car *newCar = malloc(sizeof(Car));
+    Car *newCar = readCar();
 
-    printf("Model: ");
-    scanf(" %49[^\n]", newCar->model);
-
-    printf("Country: ");
-    scanf(" %29[^\n]", newCar->country);
-
-    printf("Manufacturing Year: ");
-    // FIXME: proper date formatting
-    scanf("%d", &newCar->manufacturingDate);
-
-    newCar->enginePower = readInt("Engine Power (HP)", 0, 1500);
-
-    newCar->cost = readDouble("Cost: ", 1, INFINITY);
+    if (newCar == NULL) {
+        printf("Failed to initialize the new car.");
+        return;
+    }
 
     enqueue(queue, &newCar->link);
-
     printf("\nCar added successfully!\n");
 }
 
@@ -57,16 +66,84 @@ void handleDisplayList() {
         return;
     }
 
-    printf("\n%-3s | %-20s | %-15s | %-5s | %-8s | %-10s\n",
-           "ID", "Model", "Country", "Year", "Power", "Cost");
-    printf("--------------------------------------------------------------------------\n");
+    printf("\n%-3s | %-20s | %-15s | %-10s | %-8s | %-10s\n",
+           "ID", "Model", "Country", "Date", "Power", "Cost");
+    printf("-------------------------------------------------------------------------------\n");
 
     each(queue, displayCar);
 }
 
-void handleSearchElement() { printf("\n>> Operation: Searching...\n"); }
+void handleSearchElement() {
+    typedef struct {
+        int index;
+        char *text;
+        bool (*match)(Node *node, void *ctx);
+    } SearchMenuItem;
 
-void handleModifyElement() { printf("\n>> Operation: Modifying...\n"); }
+    const SearchMenuItem items[] = {
+        {1, "By Model", matchModel},
+        {2, "By Country", matchCountry}
+    };
+
+    const int itemsCount = sizeof(items) / sizeof(items[0]);
+
+    printf("Choose sorting criteria:\n");
+    for (int i = 0; i < itemsCount; ++i) {
+        const SearchMenuItem item = items[i];
+        printf("[%d] %-10s\n", item.index, item.text);
+    }
+
+    const int choice = readInt("Choice", 1, itemsCount);
+
+    char searchTerm[50];
+    readString("Enter search term", searchTerm, 1, 49);
+
+    Queue *filteredQueue = filter(
+        queue,
+        items[choice - 1].match,
+        searchTerm,
+        cloneCar
+    );
+
+    if (filteredQueue != NULL) {
+        if (isEmpty(filteredQueue)) {
+            printf("No results found.\n");
+        } else {
+            printf("\n--- Search Results (%zu) ---\n", filteredQueue->size);
+            each(filteredQueue, displayCar);
+        }
+
+        destroyQueue(filteredQueue, destroyCar);
+    }
+}
+
+void handleModifyElement() {
+    if (isEmpty(queue)) {
+        printf("The queue is empty. Nothing to edit.\n");
+        return;
+    }
+
+    const int targetIndex = readInt("Enter the index of the car to edit", 1, (int) queue->size) - 1;
+
+    Node *node = getAt(queue, targetIndex);
+    Car *oldCar = getCarByNode(node);
+
+    printf("\n--- Editing ---\n");
+    displayCar(node, targetIndex);
+    printf("\n");
+
+    Car *newData = readCar();
+    if (newData) {
+        strcpy(oldCar->model, newData->model);
+        strcpy(oldCar->country, newData->country);
+        strcpy(oldCar->manufacturingDate, newData->manufacturingDate);
+        oldCar->enginePower = newData->enginePower;
+        oldCar->cost = newData->cost;
+
+        free(newData);
+        printf("\nCar updated successfully!\n");
+    }
+}
 
 void handleGetLastAddress() {
     if (!queue) {
@@ -108,7 +185,48 @@ void handleSwapElements() {
     printf("Cars are swapped.");
 }
 
-void handleSortList() { printf("\n>> Operation: Sorting...\n"); }
+void handleSortList() {
+    typedef struct {
+        int index;
+        char *text;
+
+        int (*compare)(Node *a, Node *b);
+    } SortMenuItem;
+
+    const SortMenuItem items[] = {
+        {1, "Model", compareByModel},
+        {2, "Country", compareByCountry},
+        {3, "Power", compareByPower},
+        {4, "Cost", compareByCost},
+        {5, "Date", compareByDate},
+    };
+
+    const int itemsCount = sizeof(items) / sizeof(items[0]);
+
+    printf("Choose sorting criteria:\n");
+    for (int i = 0; i < itemsCount; i++) {
+        const SortMenuItem item = items[i];
+        printf("[%d] %-10s\n", item.index, item.text);
+    }
+
+    const int choice = readInt("Choice", 1, itemsCount);
+
+    printf("\nChoose sorting direction:\n");
+    printf("[1] Ascending\n");
+    printf("[2] Descending\n");
+    const int dir = readInt("Choice", 1, 2);
+
+    const SortDirection direction = (dir == 1) ? SORT_ASC : SORT_DESC;
+
+    sortQueue(
+        queue,
+        items[choice - 1].compare,
+        swapCars,
+        direction
+    );
+
+    printf("Sort completed!\n");
+}
 
 void handleFreeMemory() {
     if (!queue) {
@@ -123,17 +241,15 @@ void handleFreeMemory() {
 }
 
 void handleGenerateList() {
-    // Arrays of data to pick from
     const char *models[] = {
         "Tesla Model 3", "BMW M4", "Audi A6", "Toyota Camry", "Ford Mustang", "Mercedes S-Class", "Honda Civic",
         "Porsche 911"
     };
     const char *countries[] = {"USA", "Germany", "Japan", "Italy", "UK", "France", "South Korea"};
 
-    int modelsCount = sizeof(models) / sizeof(models[0]);
-    int countriesCount = sizeof(countries) / sizeof(countries[0]);
+    const int modelsCount = sizeof(models) / sizeof(models[0]);
+    const int countriesCount = sizeof(countries) / sizeof(countries[0]);
 
-    // Seed the random generator so we get different results every time
     srand((unsigned int) time(NULL));
 
     printf("\nGenerating 10 random cars...\n");
@@ -142,21 +258,19 @@ void handleGenerateList() {
         Car *newCar = malloc(sizeof(Car));
         if (!newCar) break;
 
-        // Pick random strings
         snprintf(newCar->model, sizeof(newCar->model), "%s", models[rand() % modelsCount]);
         snprintf(newCar->country, sizeof(newCar->country), "%s", countries[rand() % countriesCount]);
 
-        // Generate numeric values
-        // rand() % (max - min + 1) + min
-        newCar->manufacturingDate = rand() % (2026 - 2000 + 1) + 2000;
+        const int year = rand() % (2026 - 2000 + 1) + 2000;
+        const int month = rand() % 12 + 1;
+        const int day = rand() % 28 + 1;
 
-        // Random float: (float)rand() / (float)(RAND_MAX) * (max - min) + min
+        sprintf(newCar->manufacturingDate, "%04d-%02d-%02d", year, month, day);
+
         newCar->enginePower = (float) rand() / (float) RAND_MAX * (600.0f - 100.0f) + 100.0f;
 
-        // Random double
         newCar->cost = (double) rand() / (double) RAND_MAX * (100000.0 - 5000.0) + 5000.0;
 
-        // Enqueue into our intrusive queue
         enqueue(queue, &newCar->link);
     }
 
@@ -168,6 +282,26 @@ static void destroyCar(Node *node) {
     free(car);
 }
 
+static Car *readCar() {
+    Car *newCar = malloc(sizeof(Car));
+    if (newCar == NULL) {
+        return NULL;
+    }
+
+    char today[11];
+    getCurrentDate(today);
+
+    readString("Model", newCar->model, 2, 49);
+    readString("Country", newCar->country, 2, 29);
+
+    readDate("Manufacturing Date (YYYY-MM-DD)", newCar->manufacturingDate, "1885-01-01", today);
+
+    newCar->enginePower = readInt("Engine Power (HP)", 0, 1500);
+    newCar->cost = readDouble("Cost", 1, 1000000.0);
+
+    return newCar;
+}
+
 static void displayCar(Node *node, const int index) {
     if (!node) {
         return;
@@ -175,7 +309,7 @@ static void displayCar(Node *node, const int index) {
 
     Car *c = queueEntry(node, Car, link);
 
-    printf("%-3d | %-20s | %-15s | %-5d | %-8d | %-10.2f\n",
+    printf("%-3d | %-20s | %-15s | %-10s | %-8d | %-10.2f\n",
            index + 1, c->model, c->country, c->manufacturingDate, c->enginePower, c->cost);
 }
 
@@ -192,3 +326,71 @@ static void swapCars(Node *nodeA, Node *nodeB) {
     carA->link.next = carB->link.next;
     carB->link.next = tempNext;
 }
+
+static Car *getCarByNode(Node *node) {
+    return queueEntry(node, Car, link);
+}
+
+static Node *cloneCar(Node *node) {
+    const Car *oldCar = getCarByNode(node);
+
+    Car *newCar = malloc(sizeof(Car));
+    memcpy(newCar, oldCar, sizeof(Car));
+
+    // NOTE: The new copy's link must be cleaned so it doesn't
+    // point to the old queue's neighbors.
+    newCar->link.next = NULL;
+
+    return &newCar->link;
+}
+
+/****************** Sorting Start ******************/
+static int compareByModel(Node *nodeA, Node *nodeB) {
+    const Car *carA = getCarByNode(nodeA);
+    const Car *carB = getCarByNode(nodeB);
+
+    return strcmp(carA->model, carB->model);
+}
+
+static int compareByCountry(Node *nodeA, Node *nodeB) {
+    const Car *carA = getCarByNode(nodeA);
+    const Car *carB = getCarByNode(nodeB);
+
+    return strcmp(carA->country, carB->country);
+}
+
+static int compareByDate(Node *nodeA, Node *nodeB) {
+    const Car *carA = getCarByNode(nodeA);
+    const Car *carB = getCarByNode(nodeB);
+
+    return strcmp(carA->manufacturingDate, carB->manufacturingDate);
+}
+
+static int compareByPower(Node *nodeA, Node *nodeB) {
+    const Car *carA = getCarByNode(nodeA);
+    const Car *carB = getCarByNode(nodeB);
+
+    return (carA->enginePower > carB->enginePower) - (carA->enginePower < carB->enginePower);
+}
+
+static int compareByCost(Node *nodeA, Node *nodeB) {
+    const Car *carA = getCarByNode(nodeA);
+    const Car *carB = getCarByNode(nodeB);
+
+    return (carA->cost > carB->cost) - (carA->cost < carB->cost);
+}
+
+/****************** Sorting End ******************/
+
+/**************** Searching Start ****************/
+bool matchModel(Node *node, void *ctx) {
+    const Car *c = getCarByNode(node);
+    return strcasestr(c->model, (char *) ctx) != NULL;
+}
+
+bool matchCountry(Node *node, void *ctx) {
+    const Car *c = getCarByNode(node);
+    return strcasestr(c->country, (char *) ctx) != NULL;
+}
+
+/**************** Searching End ****************/

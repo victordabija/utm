@@ -74,7 +74,7 @@ Node *getLast(const Queue *q) {
 }
 
 Node *getAt(const Queue *q, const int index) {
-    if (!q || index < 0 || (size_t)index >= q->size) {
+    if (!q || index < 0 || (size_t) index >= q->size) {
         return NULL;
     }
 
@@ -100,4 +100,46 @@ void each(Queue *q, void (*callback)(Node *, int)) {
         callback(current, index++);
         current = next;
     }
+}
+
+Queue *filter(Queue *q, bool (*predicate)(Node *, void *), void *ctx, Node *(*clone)(Node *n)) {
+    if (!q || !predicate || !clone) {
+        return NULL;
+    }
+
+    Queue *newQueue = createQueue();
+    Node *curr = q->front;
+
+    while (curr) {
+        if (predicate(curr, ctx)) {
+            Node *newNode = clone(curr);
+            enqueue(newQueue, newNode);
+        }
+        curr = curr->next;
+    }
+
+    return newQueue;
+}
+
+void sortQueue(Queue *queue, int (*compare)(Node *a, Node *b), void (*swap)(Node *a, Node *b), SortDirection direction) {
+    if (!queue || queue->size < 2 || !compare || !swap) {
+        return;
+    }
+
+    bool swapped;
+    const Node *lastSorted = NULL;
+
+    do {
+        swapped = false;
+        Node *ptr1 = queue->front;
+
+        while (ptr1->next != lastSorted) {
+            if ((compare(ptr1, ptr1->next) * direction) > 0) {
+                swap(ptr1, ptr1->next);
+                swapped = true;
+            }
+            ptr1 = ptr1->next;
+        }
+        lastSorted = ptr1;
+    } while (swapped);
 }
