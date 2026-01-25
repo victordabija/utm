@@ -1,9 +1,9 @@
 #ifndef UTM_SDA_LAB_6_HANDLERS_H
 #define UTM_SDA_LAB_6_HANDLERS_H
 
-#include "queue.h"
+#include "linked_list.h"
 
-extern Queue *queue;
+extern List *list;
 
 typedef struct {
     char model[50];

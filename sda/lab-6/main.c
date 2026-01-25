@@ -3,7 +3,7 @@
 
 #define LAB_NAME "LABORATORY 6"
 
-Queue *queue = NULL;
+List *list = NULL;
 
 int main() {
     MenuItem items[] = {

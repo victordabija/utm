@@ -10,6 +10,7 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 add_subdirectory(lib/queue)
 add_subdirectory(lib/app_menu)
 add_subdirectory(lib/application)
+add_subdirectory(lib/linked_list)
 
 # ========================
 # Projects

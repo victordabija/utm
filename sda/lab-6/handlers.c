@@ -3,7 +3,7 @@
 #include <string.h>
 #include <time.h>
 
-#include "queue.h"
+#include "linked_list.h"
 #include "handlers.h"
 #include "application.h"
 
@@ -34,18 +34,18 @@ static bool matchModel(Node *node, void *ctx);
 static bool matchCountry(Node *node, void *ctx);
 
 void handleCreateList() {
-    if (queue) {
-        printf("Invalid operation. Queue is already initialized.");
+    if (list) {
+        printf("Invalid operation. List is already initialized.");
         return;
     }
 
-    printf("Queue is initialized.");
-    queue = createQueue();
+    printf("List is initialized.");
+    list = createList();
 }
 
 void handleInputData() {
-    if (!queue) {
-        printf("Please initialize the queue.");
+    if (!list) {
+        printf("Please initialize the list.");
         return;
     }
 
@@ -56,12 +56,12 @@ void handleInputData() {
         return;
     }
 
-    enqueue(queue, &newCar->link);
+    append(list, &newCar->link);
     printf("\nCar added successfully!\n");
 }
 
 void handleDisplayList() {
-    if (isEmpty(queue)) {
+    if (isEmpty(list)) {
         printf("Nothing to display.\n");
         return;
     }
@@ -70,7 +70,7 @@ void handleDisplayList() {
            "ID", "Model", "Country", "Date", "Power", "Cost");
     printf("-------------------------------------------------------------------------------\n");
 
-    each(queue, displayCar);
+    each(list, displayCar);
 }
 
 void handleSearchElement() {
@@ -98,34 +98,34 @@ void handleSearchElement() {
     char searchTerm[50];
     readString("Enter search term", searchTerm, 1, 49);
 
-    Queue *filteredQueue = filter(
-        queue,
+    List *filteredList = filter(
+        list,
         items[choice - 1].match,
         searchTerm,
         cloneCar
     );
 
-    if (filteredQueue != NULL) {
-        if (isEmpty(filteredQueue)) {
+    if (filteredList != NULL) {
+        if (isEmpty(filteredList)) {
             printf("No results found.\n");
         } else {
-            printf("\n--- Search Results (%zu) ---\n", filteredQueue->size);
-            each(filteredQueue, displayCar);
+            printf("\n--- Search Results (%zu) ---\n", filteredList->size);
+            each(filteredList, displayCar);
         }
 
-        destroyQueue(filteredQueue, destroyCar);
+        destroyList(filteredList, destroyCar);
     }
 }
 
 void handleModifyElement() {
-    if (isEmpty(queue)) {
-        printf("The queue is empty. Nothing to edit.\n");
+    if (isEmpty(list)) {
+        printf("The list is empty. Nothing to edit.\n");
         return;
     }
 
-    const int targetIndex = readInt("Enter the index of the car to edit", 1, (int) queue->size) - 1;
+    const int targetIndex = readInt("Enter the index of the car to edit", 1, (int) list->size) - 1;
 
-    Node *node = getAt(queue, targetIndex);
+    Node *node = getAt(list, targetIndex);
     Car *oldCar = getCarByNode(node);
 
     printf("\n--- Editing ---\n");
@@ -146,39 +146,39 @@ void handleModifyElement() {
 }
 
 void handleGetLastAddress() {
-    if (!queue) {
-        printf("Please initialize the queue.");
+    if (!list) {
+        printf("Please initialize the list.");
         return;
     }
 
-    Node *lastNode = getLast(queue);
-    Car *car = queueEntry(lastNode, Car, link);
+    Node *lastNode = getLast(list);
+    Car *car = getCarByNode(lastNode);
 
     printf("Address of last element: %p\n", (void *) car);
 }
 
 void handleGetLength() {
-    if (!queue) {
-        printf("Please initialize the queue.");
+    if (!list) {
+        printf("Please initialize the list.");
         return;
     }
 
-    printf("Queue length: %d", (int) queue->size);
+    printf("List length: %d", (int) list->size);
 }
 
 void handleSwapElements() {
     handleDisplayList();
 
-    const int indexA = readInt("Index of first car: ", 1, (int) queue->size) - 1;
-    const int indexB = readInt("Index of the second car: ", 1, (int) queue->size) - 1;
+    const int indexA = readInt("Index of first car: ", 1, (int) list->size) - 1;
+    const int indexB = readInt("Index of the second car: ", 1, (int) list->size) - 1;
 
     if (indexA == indexB) {
         printf("Indexes are the same.");
         return;
     }
 
-    Node *nodeA = getAt(queue, indexA);
-    Node *nodeB = getAt(queue, indexB);
+    Node *nodeA = getAt(list, indexA);
+    Node *nodeB = getAt(list, indexB);
 
     swapCars(nodeA, nodeB);
 
@@ -218,8 +218,8 @@ void handleSortList() {
 
     const SortDirection direction = (dir == 1) ? SORT_ASC : SORT_DESC;
 
-    sortQueue(
-        queue,
+    sortList(
+        list,
         items[choice - 1].compare,
         swapCars,
         direction
@@ -229,15 +229,15 @@ void handleSortList() {
 }
 
 void handleFreeMemory() {
-    if (!queue) {
+    if (!list) {
         printf("Nothing to destroy.");
         return;
     }
 
-    destroyQueue(queue, destroyCar);
-    queue = NULL;
+    destroyList(list, destroyCar);
+    list = NULL;
 
-    printf("Queue is destroyed.");
+    printf("List is destroyed.");
 }
 
 void handleGenerateList() {
@@ -271,14 +271,14 @@ void handleGenerateList() {
 
         newCar->cost = (double) rand() / (double) RAND_MAX * (100000.0 - 5000.0) + 5000.0;
 
-        enqueue(queue, &newCar->link);
+        append(list, &newCar->link);
     }
 
-    printf("Done! 10 cars added to the queue.\n");
+    printf("Done! 10 cars added to the list.\n");
 }
 
 static void destroyCar(Node *node) {
-    Car *car = queueEntry(node, Car, link);
+    Car *car = getCarByNode(node);
     free(car);
 }
 
@@ -307,15 +307,15 @@ static void displayCar(Node *node, const int index) {
         return;
     }
 
-    Car *c = queueEntry(node, Car, link);
+    Car *c = getCarByNode(node);
 
     printf("%-3d | %-20s | %-15s | %-10s | %-8d | %-10.2f\n",
            index + 1, c->model, c->country, c->manufacturingDate, c->enginePower, c->cost);
 }
 
 static void swapCars(Node *nodeA, Node *nodeB) {
-    Car *carA = queueEntry(nodeA, Car, link);
-    Car *carB = queueEntry(nodeB, Car, link);
+    Car *carA = getCarByNode(nodeA);
+    Car *carB = getCarByNode(nodeB);
     Car temp;
 
     memcpy(&temp, carA, sizeof(Car));
@@ -328,7 +328,7 @@ static void swapCars(Node *nodeA, Node *nodeB) {
 }
 
 static Car *getCarByNode(Node *node) {
-    return queueEntry(node, Car, link);
+    return listEntry(node, Car, link);
 }
 
 static Node *cloneCar(Node *node) {
@@ -338,7 +338,7 @@ static Node *cloneCar(Node *node) {
     memcpy(newCar, oldCar, sizeof(Car));
 
     // NOTE: The new copy's link must be cleaned so it doesn't
-    // point to the old queue's neighbors.
+    // point to the old list's neighbors.
     newCar->link.next = NULL;
 
     return &newCar->link;

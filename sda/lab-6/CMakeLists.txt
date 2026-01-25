@@ -2,7 +2,7 @@ add_executable(lab6 main.c handlers.c)
 
 target_link_libraries(lab6
         PRIVATE
-        queue
+        linked_list
         app_menu
         application
 )
