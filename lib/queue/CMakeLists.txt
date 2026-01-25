@@ -1,5 +1,5 @@
 add_library(queue STATIC
-        queue_d.c
+        queue.c
 )
 
 target_include_directories(queue
