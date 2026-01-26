@@ -15,4 +15,5 @@ add_subdirectory(lib/linked_list)
 # ========================
 # Projects
 # ========================
+add_subdirectory(sda/lab-2)
 add_subdirectory(sda/lab-6)
