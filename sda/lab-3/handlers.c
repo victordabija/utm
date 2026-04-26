@@ -20,6 +20,7 @@ void handleDisplay() {
         return;
     }
 
+    displayHeader();
     for (size_t i = 0; i < returnCount; i++) {
         displayCar(cars[i], (int) i + 1);
     }
@@ -44,8 +45,7 @@ void handleModify() {
     }
 
     handleDisplay();
-
-    const int targetIndex = readInt("Enter the index of the car to edit", 1, count) - 1;
+    const int targetIndex = readInt("\nEnter the index of the car to edit: ", 1, count) - 1;
     Car *car = readCar();
 
     const bool success = modifyRecord(FILENAME, sizeof(Car), targetIndex, car);
@@ -65,7 +65,7 @@ void handleSearch() {
         return;
     }
 
-    printf("Found %d %s: \n", (int) returnCount, (int) returnCount  == 1 ? "car" : "cars");
+    printf("Found %d %s: \n", (int) returnCount, (int) returnCount == 1 ? "car" : "cars");
     for (size_t i = 0; i < returnCount; i++) {
         displayCar(cars[i], (int) i + 1);
     }
@@ -74,19 +74,40 @@ void handleSearch() {
 }
 
 void handleSort() {
-    const SearchQuery compareSet = getSearchQuery(SORT_USAGE);
+    const SortQuery query = getSortQuery();
+    const bool success = sortFile(FILENAME, sizeof(Car), (CompareFunc) query.function, query.direction);
 
+    if (success) {
+        printf(
+            "\nSuccessfully sorted file in %s direction by %s column.",
+            getLabelByDirection(query.direction, false),
+            getLabelByCompareType(query.type, false)
+        );
+        return;
+    }
 
+    printf("\nSorting failed.");
 }
 
 
 void handleDeleteCar() {
+    const int count = (int) getCount(FILENAME, sizeof(Car));
+    if (!count) {
+        printf("Nothing to be deleted.");
+        return;
+    }
+
+    handleDisplay();
+    const int targetIndex = readInt("\nEnter the index of the car to delete: ", 1, count) - 1;
+
+    const bool success = deleteRecord(FILENAME, sizeof(Car), targetIndex);
+
+    printf(success ? "Successfully deleted." : "Failed to delete.");
 }
 
 
 void handleDeleteFile() {
-}
+    const bool success = deleteFile(FILENAME);
 
-
-void handleExit() {
+    printf(success ? "Successfully deleted file %s." : "Failed to delete file %s.", FILENAME);
 }

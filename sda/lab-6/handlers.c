@@ -88,7 +88,7 @@ void handleSearchElement() {
 
     const int itemsCount = sizeof(items) / sizeof(items[0]);
 
-    printf("Choose sorting criteria:\n");
+    printf("Choose searching criteria:\n");
     for (int i = 0; i < itemsCount; ++i) {
         const SearchMenuItem item = items[i];
         printf("[%d] %-10s\n", item.index, item.text);

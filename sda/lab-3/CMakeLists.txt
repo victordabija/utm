@@ -6,4 +6,5 @@ target_link_libraries(lab3
         application
         bin_file
         libcar
+        sort
 )

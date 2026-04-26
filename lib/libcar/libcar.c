@@ -27,9 +27,17 @@ void showCompareMethods();
 
 void showSearchMethods();
 
+SortDirection getSortDirection();
+
 void displayCar(Car car, const int index) {
     printf("%-3d | %-20s | %-15s | %-10s | %-8d | %-10.2f\n",
            index, car.model, car.country, car.manufacturingDate, car.enginePower, car.cost);
+}
+
+void displayHeader() {
+    printf("\n%-3s | %-20s | %-15s | %-10s | %-8s | %-10s\n",
+           "ID", "Model", "Country", "Date", "Power", "Cost");
+    printf("-------------------------------------------------------------------------------\n");
 }
 
 Car *readCar() {
@@ -51,7 +59,7 @@ Car *readCar() {
 
 // SORT
 int compareByModel(const Car *a, const Car *b) {
-    return strcmp(a->model, a->model);
+    return strcmp(a->model, b->model);
 }
 
 int compareByCountry(const Car *a, const Car *b) {
@@ -115,6 +123,30 @@ SearchQuery getSearchQuery() {
     const SearchMethod searchMethod = searchMethods[choice];
     query.function = searchMethod.function;
     query.type = searchMethod.type;
+
+    return query;
+}
+
+SortDirection getSortDirection() {
+    printf("\nChoose sorting direction:\n");
+    printf("[1] Ascending\n");
+    printf("[2] Descending\n");
+    const int direction = readInt("Choice", 1, 2);
+
+    return direction == 1 ? ASCENDING : DESCENDING;
+}
+
+SortQuery getSortQuery() {
+    SortQuery query;
+
+    printf("Choose sorting column: \n");
+    showCompareMethods();
+    const int choice = readInt("Choice", 1, getCompareMethodsCount()) - 1;
+
+    const CompareMethod compareMethod = compareMethods[choice];
+    query.function = compareMethod.function;
+    query.type = compareMethod.type;
+    query.direction = getSortDirection();
 
     return query;
 }

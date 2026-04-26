@@ -10,4 +10,5 @@ target_include_directories(libcar
 target_link_libraries(libcar
         PRIVATE
         application
+        sort
 )

@@ -1,5 +1,5 @@
 /**
-* Laboratory Nr 3
+ * Laboratory Nr 3
  * Variant 6
  * Victor Dabija
  */

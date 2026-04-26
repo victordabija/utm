@@ -2,6 +2,7 @@
 #define UTM_LIBCAR_H
 
 #include <stdbool.h>
+#include "sort.h"
 
 #define FIRST_CAR_MADE_DATE "1885-01-01"
 #define SEARCH_STRING_LIMIT 50
@@ -17,17 +18,13 @@ typedef struct {
 /* READ/WRITE */
 void displayCar(Car car, int index);
 
+void displayHeader();
+
 Car *readCar();
 
-/* COMPARE */
 typedef int (*CompareFunction)(const Car *, const Car *);
 
 typedef bool (*SearchFunction)(const Car *, const void *search);
-
-typedef enum {
-    SORT_USAGE,
-    SEARCH_USAGE
-} CompareUsage;
 
 typedef enum {
     BY_MODEL,
@@ -53,6 +50,12 @@ typedef struct {
     CompareType type;
 } SearchQuery;
 
+typedef struct {
+    CompareFunction function;
+    CompareType type;
+    SortDirection direction;
+} SortQuery;
+
 int compareByModel(const Car *a, const Car *b);
 
 int compareByCountry(const Car *a, const Car *b);
@@ -68,6 +71,8 @@ bool matchByModel(const Car *record, const void *search);
 bool matchByCountry(const Car *record, const void *search);
 
 SearchQuery getSearchQuery();
+
+SortQuery getSortQuery();
 
 char *getLabelByCompareType(CompareType type, bool capitalize);
 

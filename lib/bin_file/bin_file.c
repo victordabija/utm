@@ -1,7 +1,13 @@
 #include "bin_file.h"
+#include "sort.h"
 
 #include <stdlib.h>
 #include <string.h>
+
+static SortDirection direction;
+static CompareFunc compare;
+
+int compareWithDirection(const void *a, const void *b);
 
 bool createFile(const char *filename) {
     FILE *f = fopen(filename, "wb");
@@ -49,7 +55,7 @@ size_t getCount(const char *filename, const size_t elementSize) {
  * Get first `requestedCount` of elements.
  * If 0 is set as `requestedCount` then return all elements.
  */
-void *get(const char *filename, size_t *returnCount, const size_t requestedCount, const size_t elementSize) {
+void *get(const char *filename, size_t *returnCount, const size_t requestedCount, const size_t recordSize) {
     FILE *f = fopen(filename, "rb");
     if (!f) {
         return NULL;
@@ -61,7 +67,7 @@ void *get(const char *filename, size_t *returnCount, const size_t requestedCount
     fseek(f, currentPosition, SEEK_SET); // Return to where we were initially
 
     const size_t bytesRemaining = (size_t) (endPosition - currentPosition);
-    const size_t maxElements = bytesRemaining / elementSize;
+    const size_t maxElements = bytesRemaining / recordSize;
 
     // get all elements if requested is 0 of more than we actually have
     const size_t toRead = (requestedCount == 0 || requestedCount > maxElements) ? maxElements : requestedCount;
@@ -71,10 +77,10 @@ void *get(const char *filename, size_t *returnCount, const size_t requestedCount
         return NULL;
     }
 
-    void *buffer = malloc(toRead * elementSize);
+    void *buffer = malloc(toRead * recordSize);
     if (!buffer) return NULL;
 
-    const size_t actualRead = fread(buffer, elementSize, toRead, f);
+    const size_t actualRead = fread(buffer, recordSize, toRead, f);
     *returnCount = actualRead;
 
     if (actualRead == 0) {
@@ -132,29 +138,43 @@ void *searchRecords(const char *filename, const size_t elementSize, const void *
     return results;
 }
 
-void sortFile(const char *filename, const size_t size, const CompareFunc cmp) {
-    FILE *f = fopen(filename, "rb");
-    if (!f) return;
-    fseek(f, 0, SEEK_END);
-    const long count = (long) (ftell(f) / size);
-    rewind(f);
-
-    void *data = malloc(count * size);
-    fread(data, size, count, f);
-    fclose(f);
-
-    qsort(data, count, size, cmp);
-
-    f = fopen(filename, "wb");
-    fwrite(data, size, count, f);
-    fclose(f);
-    free(data);
+// wrapper around compare function.
+// qsort doesn't offer a direction parameter and modifying compare functions to have one inline is not an option for me.
+int compareWithDirection(const void *a, const void *b) {
+    return compare(a, b) * direction;
 }
 
-void deleteRecord(const char *filename, const size_t size, const int index) {
+bool sortFile(const char *filename, const size_t elementSize, const CompareFunc cmp, SortDirection dir) {
     FILE *f = fopen(filename, "rb");
     if (!f) {
-        return;
+        return false;
+    };
+
+    fseek(f, 0, SEEK_END);
+    const long count = (long) (ftell(f) / elementSize);
+    rewind(f);
+
+    void *data = malloc(count * elementSize);
+    fread(data, elementSize, count, f);
+    fclose(f);
+
+    direction = dir;
+    compare = cmp;
+
+    qsort(data, count, elementSize, compareWithDirection);
+
+    f = fopen(filename, "wb");
+    fwrite(data, elementSize, count, f);
+    fclose(f);
+    free(data);
+
+    return true;
+}
+
+bool deleteRecord(const char *filename, const size_t size, const int index) {
+    FILE *f = fopen(filename, "rb");
+    if (!f) {
+        return false;
     }
 
     FILE *temp = fopen("temp.bin", "wb");
@@ -174,8 +194,9 @@ void deleteRecord(const char *filename, const size_t size, const int index) {
 
     remove(filename);
     rename("temp.bin", filename);
+    return true;
 }
 
-void deleteFile(const char *filename) {
-    remove(filename);
+bool deleteFile(const char *filename) {
+    return remove(filename) == 0;
 }
