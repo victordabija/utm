@@ -30,8 +30,10 @@ static int compareByPower(const Car *a, const Car *b);
 static int compareByCost(const Car *a, const Car *b);
 
 void handleInput() {
-    const Car *car = readCar();
+    Car *car = readCar();
     addElement(&array, car);
+    
+    free(car);
 }
 
 void handleDisplay() {

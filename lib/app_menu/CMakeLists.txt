@@ -10,5 +10,6 @@ target_include_directories(app_menu
 target_link_libraries(app_menu
         PRIVATE
         application
+        m
 )
 

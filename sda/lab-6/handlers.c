@@ -57,6 +57,7 @@ void handleInputData() {
     }
 
     append(list, &newCar->link);
+    free(newCar);
     printf("\nCar added successfully!\n");
 }
 

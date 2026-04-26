@@ -7,13 +7,16 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 # ========================
 # Libraries
 # ========================
-add_subdirectory(lib/queue)
+add_subdirectory(lib/libcar)
 add_subdirectory(lib/app_menu)
+add_subdirectory(lib/queue)
 add_subdirectory(lib/application)
 add_subdirectory(lib/linked_list)
+add_subdirectory(lib/bin_file)
 
 # ========================
 # Projects
 # ========================
 add_subdirectory(sda/lab-2)
+add_subdirectory(sda/lab-3)
 add_subdirectory(sda/lab-6)

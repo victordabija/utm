@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <math.h>
 
 #include "app_menu.h"
 #include "application.h"
@@ -24,9 +25,9 @@ static void displayMenu(const Menu *menu) {
 
     printf("\n--- %s MENU ---\n", menu->title);
     for (int i = 0; i < menu->count; i++) {
-        printf("[%2d] %s\n", menu->items[i].id, menu->items[i].text);
+        printf("[%*d] %s\n", menu->width, menu->items[i].id, menu->items[i].text);
     }
-    printf("[ 0] Exit\n");
+    printf("[%*d] Exit\n", menu->width, 0);
 }
 
 static void bye() {
@@ -48,9 +49,13 @@ void initMenu(Menu *menu, const char *title, MenuItem *items, const int count) {
         throw("Invalid options for creating menu", 1);
     }
 
+
     menu->count = count;
     menu->title = title;
     menu->items = items;
+
+    const int maxId = menu->items[menu->count - 1].id;
+    menu->width = (maxId > 0) ? (int) log10(maxId) + 1 : 1;
 
     eachMenuItems(menu, itemIsValid);
 }

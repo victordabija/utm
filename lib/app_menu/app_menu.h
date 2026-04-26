@@ -14,6 +14,7 @@ typedef struct {
     const char *title;
     MenuItem *items;
     int count;
+    int width; // used for indentation
 } Menu;
 
 void initMenu(Menu *menu, const char* title, MenuItem *items, int count);
