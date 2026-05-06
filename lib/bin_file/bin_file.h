@@ -19,7 +19,7 @@ void *get(const char *filename, size_t *returnCount, size_t requestedCount, size
 
 bool modifyRecord(const char *filename, size_t size, int index, const void *newData);
 
-void *searchRecords(const char *filename, size_t elementSize, const void *search, SearchFunc compare,
+void *searchRecords(const char *filename, size_t elementSize, const void *search, SearchFunc cmp,
                     size_t *returnCount);
 
 bool sortFile(const char *filename, size_t elementSize, CompareFunc compare, SortDirection direction);

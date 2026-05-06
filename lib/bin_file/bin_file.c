@@ -101,7 +101,7 @@ bool modifyRecord(const char *filename, const size_t size, const int index, cons
     return true;
 }
 
-void *searchRecords(const char *filename, const size_t elementSize, const void *search, const SearchFunc compare,
+void *searchRecords(const char *filename, const size_t elementSize, const void *search, const SearchFunc cmp,
                     size_t *returnCount) {
     FILE *f = fopen(filename, "rb");
     if (!f) {
@@ -115,7 +115,7 @@ void *searchRecords(const char *filename, const size_t elementSize, const void *
     void *tempRecord = malloc(elementSize);
 
     while (fread(tempRecord, elementSize, 1, f) == 1) {
-        if (compare(tempRecord, search)) {
+        if (cmp(tempRecord, search)) {
             matchCount++;
 
             void *newResults = realloc(results, matchCount * elementSize);
@@ -144,7 +144,7 @@ int compareWithDirection(const void *a, const void *b) {
     return compare(a, b) * direction;
 }
 
-bool sortFile(const char *filename, const size_t elementSize, const CompareFunc cmp, SortDirection dir) {
+bool sortFile(const char *filename, const size_t elementSize, const CompareFunc cmp, const SortDirection dir) {
     FILE *f = fopen(filename, "rb");
     if (!f) {
         return false;
@@ -161,6 +161,7 @@ bool sortFile(const char *filename, const size_t elementSize, const CompareFunc 
     direction = dir;
     compare = cmp;
 
+    // fixme: maybe replace qsort
     qsort(data, count, elementSize, compareWithDirection);
 
     f = fopen(filename, "wb");

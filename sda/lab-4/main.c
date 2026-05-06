@@ -1,14 +1,13 @@
 /**
- * Laboratory Nr 3
- * Variant 6
+ * Laboratory Nr 4
+ * Variant 4
  * Victor Dabija
  */
 
-#include "app_menu.h"
 #include "handlers.h"
+#include "app_menu.h"
 
-#define LAB_NAME "LABORATORY 3"
-
+#define LAB_NAME "LABORATORY 4"
 
 int main() {
     MenuItem items[] = {

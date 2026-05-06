@@ -1,7 +1,7 @@
-#ifndef UTM_SDA_LAB_3_HANDLERS_H
-#define UTM_SDA_LAB_3_HANDLERS_H
+#ifndef UTM_SDA_LAB_4_HANDLERS_H
+#define UTM_SDA_LAB_4_HANDLERS_H
 
-#define FILENAME "cars.bin"
+#define FILENAME "cars.txt"
 
 void handleCreate();
 
@@ -19,4 +19,4 @@ void handleDeleteCar();
 
 void handleDeleteFile();
 
-#endif //UTM_SDA_LAB_3_HANDLERS_H
+#endif //UTM_SDA_LAB_4_HANDLERS_H
