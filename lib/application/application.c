@@ -168,7 +168,34 @@ void getCurrentDate(char *today) {
     strftime(today, 11, "%Y-%m-%d", tm_info);
 }
 
+bool isPrime(const int num) {
+    if (num <= 1) {
+        return false;
+    }
+
+    for (int i = 2; i * i <= num; i++) {
+        if (num % i == 0) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+bool containsPrime(const int *arr, const int n) {
+    for (int i = 0; i < n; i++) {
+        if (isPrime(arr[i])) {
+            return true;
+        }
+    }
+    return false;
+}
+
 noreturn void throw(const char *text, const int code) {
     printf("%s \n", text);
     exit(code);
+}
+
+void displayDelimiter() {
+    printf("\n ======================================== \n");
 }

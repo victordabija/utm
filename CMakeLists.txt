@@ -15,10 +15,12 @@ add_subdirectory(lib/linked_list)
 add_subdirectory(lib/bin_file)
 add_subdirectory(lib/txt_file)
 add_subdirectory(lib/sort)
+add_subdirectory(lib/array)
 
 # ========================
 # Projects
 # ========================
+add_subdirectory(sda/lab-1)
 add_subdirectory(sda/lab-2)
 add_subdirectory(sda/lab-3)
 add_subdirectory(sda/lab-4)

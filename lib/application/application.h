@@ -20,6 +20,12 @@ void readDate(const char *prompt, char *dest, const char *minDate, const char *m
 
 void getCurrentDate(char *today);
 
+bool isPrime(int num);
+
+bool containsPrime(const int *arr, int n);
+
 noreturn void throw(const char *text, int code);
+
+void displayDelimiter();
 
 #endif //UTM_APPLICATION_H
