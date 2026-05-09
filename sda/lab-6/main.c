@@ -7,17 +7,17 @@ List *list = NULL;
 
 int main() {
     MenuItem items[] = {
-        {1, "Create list in dynamic memory", handleCreateList},
-        {2, "Input element info from keyboard", handleInputData},
-        {3, "Display list elements on screen", handleDisplayList},
-        {4, "Search for an element in list", handleSearchElement},
-        {5, "Modify element fields", handleModifyElement},
-        {6, "Get address of last element", handleGetLastAddress},
-        {7, "Determine list length", handleGetLength},
-        {8, "Swap two elements", handleSwapElements},
-        {9, "Sort the list", handleSortList},
-        {10, "Free list memory (Cleanup)", handleFreeMemory},
-        {11, "Generate list", handleGenerateList}
+        createMenuItem(1, "Create list in dynamic memory", handleCreateList),
+        createMenuItem(2, "Input element info from keyboard", handleInputData),
+        createMenuItem(3, "Display list elements on screen", handleDisplayList),
+        createMenuItem(4, "Search for an element in list", handleSearchElement),
+        createMenuItem(5, "Modify element fields", handleModifyElement),
+        createMenuItem(6, "Get address of last element", handleGetLastAddress),
+        createMenuItem(7, "Determine list length", handleGetLength),
+        createMenuItem(8, "Swap two elements", handleSwapElements),
+        createMenuItem(9, "Sort the list", handleSortList),
+        createMenuItem(10, "Free list memory (Cleanup)", handleFreeMemory),
+        createMenuItem(11, "Generate list", handleGenerateList)
     };
 
     const int count = sizeof(items) / sizeof(items[0]);

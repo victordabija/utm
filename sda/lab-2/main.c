@@ -16,10 +16,10 @@ int main() {
     initArray(&array, DEFAULT_CAPACITY);
 
     MenuItem items[] = {
-        {1, "Input Array", handleInput},
-        {2, "Display Array", handleDisplay},
-        {3, "Sort Array", handleSort},
-        {4, "Generate", handleGenerateList},
+        createMenuItem(1, "Input Array", handleInput),
+        createMenuItem(2, "Display Array", handleDisplay),
+        createMenuItem(3, "Sort Array", handleSort),
+        createMenuItem(4, "Generate", handleGenerateList),
     };
 
     const int count = sizeof(items) / sizeof(items[0]);

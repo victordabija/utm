@@ -40,15 +40,25 @@ static void runMenuItem(const MenuItem *item) {
 
     item->action();
 
-    printf("\nPress Enter to return to menu...");
-    getchar(); // catch the newline from scanf
+    if (item->showConfirmation) {
+        printf("\nPress Enter to return to menu...");
+        getchar(); // catch the newline from scanf
+    }
+}
+
+MenuItem createMenuItem(const int id, const char *title, const MenuCallback action) {
+    return (MenuItem){
+        .id = id,
+        .text = title,
+        .action = action,
+        .showConfirmation = true
+    };
 }
 
 void initMenu(Menu *menu, const char *title, MenuItem *items, const int count) {
     if (!menu || !items || !title || count <= 0) {
         throw("Invalid options for creating menu", 1);
     }
-
 
     menu->count = count;
     menu->title = title;

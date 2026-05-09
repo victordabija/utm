@@ -12,14 +12,14 @@
 
 int main() {
     MenuItem items[] = {
-        {1, "Create file", handleCreate},
-        {2, "Display All Cars", handleDisplay},
-        {3, "Add New Car to File", handleAppend},
-        {4, "Modify car Details", handleModify},
-        {5, "Search for a car", handleSearch},
-        {6, "Sort cars", handleSort},
-        {7, "Remove a car", handleDeleteCar},
-        {8, "Delete file", handleDeleteFile},
+        createMenuItem(1, "Create file", handleCreate),
+        createMenuItem(2, "Display All Cars", handleDisplay),
+        createMenuItem(3, "Add New Car to File", handleAppend),
+        createMenuItem(4, "Modify car Details", handleModify),
+        createMenuItem(5, "Search for a car", handleSearch),
+        createMenuItem(6, "Sort cars", handleSort),
+        createMenuItem(7, "Remove a car", handleDeleteCar),
+        createMenuItem(8, "Delete file", handleDeleteFile),
     };
 
     const int count = sizeof(items) / sizeof(items[0]);
