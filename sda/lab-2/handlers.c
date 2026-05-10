@@ -1,38 +1,25 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <time.h>
 
 #include "handlers.h"
 #include "application.h"
+#include "libcar.h"
+#include "sort.h"
 
 static void addElement(Array *arr, const Car *car);
-
-static Car *readCar();
-
-static void displayCar(Car car, int index);
 
 static void sort(const Array *arr, int (*compare)(const Car *a, const Car *b), SortMethod method,
                  SortDirection direction);
 
-static void bubbleSort(const Array *arr, int (*compare)(const Car *a, const Car *b), SortDirection direction);
+static void bubbleSort_local(const Array *arr, int (*compare)(const Car *a, const Car *b), SortDirection direction);
 
-static void selectionSort(const Array *arr, int (*compare)(const Car *a, const Car *b), SortDirection direction);
-
-static int compareByModel(const Car *a, const Car *b);
-
-static int compareByCountry(const Car *a, const Car *b);
-
-static int compareByDate(const Car *a, const Car *b);
-
-static int compareByPower(const Car *a, const Car *b);
-
-static int compareByCost(const Car *a, const Car *b);
+static void selectionSort_local(const Array *arr, int (*compare)(const Car *a, const Car *b), SortDirection direction);
 
 void handleInput() {
     Car *car = readCar();
     addElement(&array, car);
-    
+
     free(car);
 }
 
@@ -42,10 +29,7 @@ void handleDisplay() {
         return;
     }
 
-    printf("\n%-3s | %-20s | %-15s | %-10s | %-8s | %-10s\n",
-           "ID", "Model", "Country", "Date", "Power", "Cost");
-    printf("-------------------------------------------------------------------------------\n");
-
+    displayHeader();
     for (int i = 0; i < array.size; i++) {
         displayCar(*(array.data + i), i);
     }
@@ -82,12 +66,12 @@ void handleSort() {
     printf("[2] Descending\n");
     const int dir = readInt("Choice", 1, 2);
 
-    const SortDirection direction = (dir == 1) ? SORT_ASC : SORT_DESC;
+    const SortDirection direction = (dir == 1) ? ASCENDING : DESCENDING;
 
     printf("\nChoose sorting method:\n");
     printf("[1] Bubble sort\n");
     printf("[2] Selection sort\n");
-    const int method = (SortMethod) readInt("Choice", 1, 2);
+    const int method = readInt("Choice", 1, 2) == 1 ? BUBBLE_SORT : SELECTION_SORT;
 
     sort(&array, items[choice - 1].compare, method, direction);
 }
@@ -108,43 +92,21 @@ static void addElement(Array *arr, const Car *car) {
     arr->size++;
 }
 
-static Car *readCar() {
-    Car *car = (Car *) malloc(sizeof(Car));
-
-    char today[11];
-    getCurrentDate(today);
-
-    readString("Model", car->model, 2, 49);
-    readString("Country", car->country, 2, 29);
-
-    readDate("Manufacturing Date (YYYY-MM-DD)", car->manufacturingDate, "1885-01-01", today);
-
-    car->enginePower = readInt("Engine Power (HP)", 0, 1500);
-    car->cost = readDouble("Cost", 1, 1000000.0);
-
-    return car;
-}
-
-static void displayCar(Car car, const int index) {
-    printf("%-3d | %-20s | %-15s | %-10s | %-8d | %-10.2f\n",
-           index + 1, car.model, car.country, car.manufacturingDate, car.enginePower, car.cost);
-}
-
 static void sort(const Array *arr, int (*compare)(const Car *a, const Car *b), const SortMethod method,
                  const SortDirection direction) {
     switch (method) {
         case BUBBLE_SORT:
-            bubbleSort(arr, compare, direction);
+            bubbleSort_local(arr, compare, direction);
             break;
         case SELECTION_SORT:
-            selectionSort(arr, compare, direction);
+            selectionSort_local(arr, compare, direction);
             break;
         default:
             throw("Selected sort method does not exist", -1);
     }
 }
 
-static void bubbleSort(const Array *arr, int (*compare)(const Car *a, const Car *b), const SortDirection direction) {
+static void bubbleSort_local(const Array *arr, int (*compare)(const Car *a, const Car *b), const SortDirection direction) {
     if (arr->size < 2) {
         return;
     }
@@ -153,7 +115,7 @@ static void bubbleSort(const Array *arr, int (*compare)(const Car *a, const Car 
         for (int j = 0; j < arr->size - i - 1; j++) {
             const int cmp = compare(&arr->data[j], &arr->data[j + 1]);
 
-            if ((direction == SORT_ASC && cmp > 0) || (direction == SORT_DESC && cmp < 0)) {
+            if ((direction == ASCENDING && cmp > 0) || (direction == DESCENDING && cmp < 0)) {
                 const Car temp = arr->data[j];
                 arr->data[j] = arr->data[j + 1];
                 arr->data[j + 1] = temp;
@@ -162,7 +124,7 @@ static void bubbleSort(const Array *arr, int (*compare)(const Car *a, const Car 
     }
 }
 
-static void selectionSort(const Array *arr, int (*compare)(const Car *a, const Car *b), const SortDirection direction) {
+static void selectionSort_local(const Array *arr, int (*compare)(const Car *a, const Car *b), const SortDirection direction) {
     if (arr->size < 2) return;
 
     for (int i = 0; i < arr->size - 1; i++) {
@@ -170,7 +132,7 @@ static void selectionSort(const Array *arr, int (*compare)(const Car *a, const C
         for (int j = i + 1; j < arr->size; j++) {
             const int cmp = compare(&arr->data[j], &arr->data[targetIdx]);
 
-            if ((direction == SORT_ASC && cmp < 0) || (direction == SORT_DESC && cmp > 0)) {
+            if ((direction == ASCENDING && cmp < 0) || (direction == DESCENDING && cmp > 0)) {
                 targetIdx = j;
             }
         }
@@ -182,30 +144,6 @@ static void selectionSort(const Array *arr, int (*compare)(const Car *a, const C
         }
     }
 }
-
-/****************** Sorting Start ******************/
-static int compareByModel(const Car *a, const Car *b) {
-    return strcmp(a->model, b->model);
-}
-
-static int compareByCountry(const Car *a, const Car *b) {
-    return strcmp(a->country, b->country);
-}
-
-static int compareByDate(const Car *a, const Car *b) {
-    return strcmp(a->manufacturingDate, b->manufacturingDate);
-}
-
-static int compareByPower(const Car *a, const Car *b) {
-    return (a->enginePower > b->enginePower) - (a->enginePower < b->enginePower);
-}
-
-static int compareByCost(const Car *a, const Car *b) {
-    return (a->cost > b->cost) - (a->cost < b->cost);
-}
-
-/****************** Sorting End ***z***************/
-
 
 void handleGenerateList() {
     const char *models[] = {
