@@ -7,21 +7,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-
-static void carToString(const void *record, char *buffer) {
-    const Car *car = record;
-    sprintf(buffer, "%s|%s|%s|%d|%.2f",
-            car->model, car->country, car->manufacturingDate,
-            car->enginePower, car->cost);
-}
-
-static void carFromString(const char *string, void *record) {
-    Car *car = record;
-    sscanf(string, "%[^|]|%[^|]|%[^|]|%d|%lf",
-           car->model, car->country, car->manufacturingDate,
-           &car->enginePower, &car->cost);
-}
-
 void handleCreate() {
     const bool success = createFile(FILENAME);
 

@@ -76,4 +76,13 @@ SortQuery getSortQuery();
 
 char *getLabelByCompareType(CompareType type, bool capitalize);
 
+void carToString(const void *record, char *buffer);
+
+void carFromString(const char *string, void *record);
+
+/**
+ * void pointer, cause it may be a callback to various functions
+ */
+void freeCar(void *record);
+
 #endif //UTM_LIBCAR_H

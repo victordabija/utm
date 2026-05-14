@@ -1,5 +1,7 @@
 #include <stdlib.h>
+
 #include "linked_list.h"
+#include "sort.h"
 
 List *createList(void) {
     List *list = malloc(sizeof(*list));
@@ -13,13 +15,27 @@ List *createList(void) {
     return list;
 }
 
-bool isEmpty(const List *list) {
+bool isEmptyList(const List *list) {
     return (list == NULL || list->head == NULL);
 }
 
-void prepend(List *list, Node *node) {
-    if (!list || !node) {
-        return;
+static Node *createNode(void *data) {
+    Node *node = malloc(sizeof(*node));
+    if (node) {
+        node->data = data;
+        node->next = NULL;
+    }
+    return node;
+}
+
+bool prepend(List *list, void *data) {
+    if (!list) {
+        return false;
+    }
+
+    Node *node = createNode(data);
+    if (!node) {
+        return false;
     }
 
     node->next = list->head;
@@ -28,11 +44,16 @@ void prepend(List *list, Node *node) {
         list->tail = node;
     }
     list->size++;
+    return true;
 }
 
-void append(List *list, Node *node) {
-    if (!list || !node) return;
-    node->next = NULL;
+bool append(List *list, void *data) {
+    if (!list) {
+        return false;
+    }
+
+    Node *node = createNode(data);
+    if (!node) return false;
 
     if (list->tail == NULL) {
         list->head = list->tail = node;
@@ -42,121 +63,175 @@ void append(List *list, Node *node) {
     }
 
     list->size++;
+    return true;
 }
 
-void insertAt(List *list, Node *node, const int index) {
-    if (!list || !node || index < 0 || (size_t) index > list->size) return;
+bool insertAt(List *list, void *data, const int index) {
+    if (!list || index < 0 || (size_t) index > list->size) {
+        return false;
+    }
 
     if (index == 0) {
-        prepend(list, node);
-    } else if ((size_t) index == list->size) {
-        append(list, node);
-    } else {
-        Node *prev = getAt(list, index - 1);
-        node->next = prev->next;
-        prev->next = node;
-        list->size++;
+        return prepend(list, data);
     }
+
+    if ((size_t) index == list->size) {
+        return append(list, data);
+    }
+
+    Node *node = createNode(data);
+    if (!node) return false;
+
+    Node *prev = list->head;
+    for (int i = 0; i < index - 1; i++) {
+        prev = prev->next;
+    }
+
+    node->next = prev->next;
+    prev->next = node;
+    list->size++;
+    return true;
 }
 
-Node *popFront(List *list) {
-    if (isEmpty(list)) return NULL;
+void *popFront(List *list) {
+    if (isEmptyList(list)) {
+        return NULL;
+    }
+
     Node *temp = list->head;
+    void *data = temp->data;
+
     list->head = temp->next;
     if (list->head == NULL) {
         list->tail = NULL;
     }
+
+    free(temp);
     list->size--;
-    return temp;
+
+    return data;
 }
 
-Node *removeAt(List *list, const int index) {
-    if (isEmpty(list) || index < 0 || (size_t) index >= list->size) return NULL;
+void *popBack(List *list) {
+    if (isEmptyList(list)) { return NULL; }
+    if (list->size == 1) { return popFront(list); }
+
+    Node *prev = NULL;
+    Node *curr = list->head;
+
+    while (curr->next != NULL) {
+        prev = curr;
+        curr = curr->next;
+    }
+
+    void *data = curr->data;
+    prev->next = NULL;
+    list->tail = prev;
+
+    free(curr);
+    list->size--;
+
+    return data;
+}
+
+void *removeAt(List *list, const int index) {
+    if (isEmptyList(list) || index < 0 || (size_t) index >= list->size) return NULL;
 
     if (index == 0) return popFront(list);
 
-    Node *prev = getAt(list, index - 1);
+    Node *prev = list->head;
+    for (int i = 0; i < index - 1; i++) {
+        prev = prev->next;
+    }
+
     Node *toDelete = prev->next;
+    void *data = toDelete->data;
+
     prev->next = toDelete->next;
 
     if (toDelete == list->tail) {
         list->tail = prev;
     }
 
+    free(toDelete);
     list->size--;
-    return toDelete;
+
+    return data;
 }
 
-Node *getAt(const List *list, int index) {
+void *getAt(const List *list, int index) {
     if (!list || index < 0 || (size_t) index >= list->size) return NULL;
     Node *current = list->head;
     for (int i = 0; i < index; i++) {
         current = current->next;
     }
-    return current;
+    return current->data;
 }
 
-Node *getLast(const List *l) {
-    if (isEmpty(l)) {
-        return NULL;
-    }
-
-    return l->tail;
+void *getLast(const List *list) {
+    if (isEmptyList(list)) return NULL;
+    return list->tail->data;
 }
 
-void destroyList(List *list, void (*cleanup)(Node *)) {
+void destroyList(List *list, void (*cleanup)(void *)) {
     if (!list) return;
     Node *current = list->head;
     while (current) {
         Node *next = current->next;
-        if (cleanup) cleanup(current);
+        if (cleanup && current->data) {
+            cleanup(current->data);
+        }
+        free(current);
         current = next;
     }
     free(list);
 }
 
-void each(List *list, void (*callback)(Node *, int)) {
+void each(List *list, void (*callback)(void *, int)) {
     if (!list || !callback) return;
     Node *current = list->head;
     int index = 0;
     while (current) {
-        Node *next = current->next;
-        callback(current, index++);
-        current = next;
+        callback(current->data, index++);
+        current = current->next;
     }
 }
 
-List *filter(List *l, bool (*predicate)(Node *, void *), void *ctx, Node *(*clone)(Node *n)) {
-    if (!l || !predicate || !clone) return NULL;
+List *filter(List *l, bool (*predicate)(void *, void *), void *ctx, void *(*clone)(void *)) {
+    if (!l || !predicate) return NULL;
     List *newList = createList();
-    Node *curr = l->head;
+    if (!newList) return NULL;
+
+    const Node *curr = l->head;
     while (curr) {
-        if (predicate(curr, ctx)) {
-            append(newList, clone(curr));
+        if (predicate(curr->data, ctx)) {
+            void *dataToAppend = clone ? clone(curr->data) : curr->data;
+            append(newList, dataToAppend);
         }
         curr = curr->next;
     }
     return newList;
 }
 
-void sortList(List *list, int (*compare)(Node *a, Node *b), void (*swap)(Node *a, Node *b),
-              const SortDirection direction) {
-    if (!list || list->size < 2 || !compare || !swap) return;
+void sortList(List *list, int (*compare)(const void *a, const void *b), const SortDirection direction) {
+    if (!list || list->size < 2 || !compare) return;
 
     bool swapped;
     const Node *lastSorted = NULL;
 
     do {
         swapped = false;
-        Node *ptr1 = list->head;
+        Node *curr = list->head;
 
-        while (ptr1->next != lastSorted) {
-            if ((compare(ptr1, ptr1->next) * direction) > 0) {
-                swap(ptr1, ptr1->next);
+        while (curr->next != lastSorted) {
+            if ((compare(curr->data, curr->next->data) * direction) > 0) {
+                void *temp = curr->data;
+                curr->data = curr->next->data;
+                curr->next->data = temp;
                 swapped = true;
             }
-            ptr1 = ptr1->next;
+            curr = curr->next;
         }
-        lastSorted = ptr1;
+        lastSorted = curr;
     } while (swapped);
 }

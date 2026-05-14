@@ -3,227 +3,176 @@
 #include <string.h>
 #include <time.h>
 
-#include "linked_list.h"
 #include "handlers.h"
+#include "linked_list.h"
+#include "libcar.h"
 #include "application.h"
 
-static Car *getCarByNode(Node *node);
 
-static Car *readCar();
+static void displayCarWrapper(void *data, int index) {
+    if (data) {
+        displayCar(*(Car *) data, index + 1);
+    }
+}
 
-static void destroyCar(Node *node);
+static void *cloneCarWrapper(void *data) {
+    if (!data) return NULL;
 
-static void displayCar(Node *node, int index);
+    Car *newCar = malloc(sizeof(Car));
+    if (newCar) {
+        memcpy(newCar, data, sizeof(Car));
+    }
+    return newCar;
+}
 
-static void swapCars(Node *nodeA, Node *nodeB);
-
-static Node *cloneCar(Node *node);
-
-static int compareByModel(Node *nodeA, Node *nodeB);
-
-static int compareByCountry(Node *nodeA, Node *nodeB);
-
-static int compareByDate(Node *nodeA, Node *nodeB);
-
-static int compareByPower(Node *nodeA, Node *nodeB);
-
-static int compareByCost(Node *nodeA, Node *nodeB);
-
-static bool matchModel(Node *node, void *ctx);
-
-static bool matchCountry(Node *node, void *ctx);
 
 void handleCreateList() {
     if (list) {
-        printf("Invalid operation. List is already initialized.");
+        printf("Invalid operation. List is already initialized.\n");
         return;
     }
 
-    printf("List is initialized.");
     list = createList();
+    printf(list ? "List is initialized.\n" : "Failed to initialize the list.\n");
 }
 
 void handleInputData() {
     if (!list) {
-        printf("Please initialize the list.");
+        printf("Please initialize the list.\n");
         return;
     }
 
     Car *newCar = readCar();
+    append(list, newCar);
 
-    if (newCar == NULL) {
-        printf("Failed to initialize the new car.");
-        return;
-    }
-
-    append(list, &newCar->link);
-    free(newCar);
     printf("\nCar added successfully!\n");
 }
 
 void handleDisplayList() {
-    if (isEmpty(list)) {
+    if (isEmptyList(list)) {
         printf("Nothing to display.\n");
         return;
     }
 
-    printf("\n%-3s | %-20s | %-15s | %-10s | %-8s | %-10s\n",
-           "ID", "Model", "Country", "Date", "Power", "Cost");
-    printf("-------------------------------------------------------------------------------\n");
-
-    each(list, displayCar);
+    displayHeader();
+    each(list, displayCarWrapper);
 }
 
 void handleSearchElement() {
-    typedef struct {
-        int index;
-        char *text;
-        bool (*match)(Node *node, void *ctx);
-    } SearchMenuItem;
-
-    const SearchMenuItem items[] = {
-        {1, "By Model", matchModel},
-        {2, "By Country", matchCountry}
-    };
-
-    const int itemsCount = sizeof(items) / sizeof(items[0]);
-
-    printf("Choose searching criteria:\n");
-    for (int i = 0; i < itemsCount; ++i) {
-        const SearchMenuItem item = items[i];
-        printf("[%d] %-10s\n", item.index, item.text);
+    if (isEmptyList(list)) {
+        printf("The list is empty.\n");
+        return;
     }
 
-    const int choice = readInt("Choice", 1, itemsCount);
-
-    char searchTerm[50];
-    readString("Enter search term", searchTerm, 1, 49);
+    SearchQuery query = getSearchQuery();
 
     List *filteredList = filter(
         list,
-        items[choice - 1].match,
-        searchTerm,
-        cloneCar
+        (bool (*)(void *, void *)) query.function,
+        query.search,
+        cloneCarWrapper
     );
 
     if (filteredList != NULL) {
-        if (isEmpty(filteredList)) {
+        if (isEmptyList(filteredList)) {
             printf("No results found.\n");
         } else {
             printf("\n--- Search Results (%zu) ---\n", filteredList->size);
-            each(filteredList, displayCar);
+            displayHeader();
+            each(filteredList, displayCarWrapper);
         }
 
-        destroyList(filteredList, destroyCar);
+        destroyList(filteredList, freeCar);
     }
 }
 
 void handleModifyElement() {
-    if (isEmpty(list)) {
+    if (isEmptyList(list)) {
         printf("The list is empty. Nothing to edit.\n");
         return;
     }
 
     const int targetIndex = readInt("Enter the index of the car to edit", 1, (int) list->size) - 1;
 
-    Node *node = getAt(list, targetIndex);
-    Car *oldCar = getCarByNode(node);
+    Car *oldCar = getAt(list, targetIndex);
 
-    printf("\n--- Editing ---\n");
-    displayCar(node, targetIndex);
-    printf("\n");
-
-    Car *newData = readCar();
-    if (newData) {
-        strcpy(oldCar->model, newData->model);
-        strcpy(oldCar->country, newData->country);
-        strcpy(oldCar->manufacturingDate, newData->manufacturingDate);
-        oldCar->enginePower = newData->enginePower;
-        oldCar->cost = newData->cost;
-
-        free(newData);
-        printf("\nCar updated successfully!\n");
-    }
-}
-
-void handleGetLastAddress() {
-    if (!list) {
-        printf("Please initialize the list.");
+    if (!oldCar) {
+        printf("Car not found.\n");
         return;
     }
 
-    Node *lastNode = getLast(list);
-    Car *car = getCarByNode(lastNode);
+    printf("\n--- Editing ---\n");
+    displayHeader();
+    displayCar(*oldCar, targetIndex + 1);
+    printf("\n");
 
-    printf("Address of last element: %p\n", (void *) car);
+    Car *newData = readCar();
+    memcpy(oldCar, newData, sizeof(Car));
+    free(newData);
+
+    printf("\nCar updated successfully!\n");
+}
+
+void handleGetLastAddress() {
+    if (isEmptyList(list)) {
+        printf("Please initialize the list, or add an item.\n");
+        return;
+    }
+
+    Car *car = getLast(list);
+    printf("Address of last element data: %p\n", (void *) car);
 }
 
 void handleGetLength() {
     if (!list) {
-        printf("Please initialize the list.");
+        printf("Please initialize the list.\n");
         return;
     }
 
-    printf("List length: %d", (int) list->size);
+    printf("List length: %zu\n", list->size);
 }
 
 void handleSwapElements() {
+    if (isEmptyList(list) || list->size < 2) {
+        printf("Not enough elements to swap.\n");
+        return;
+    }
+
     handleDisplayList();
 
     const int indexA = readInt("Index of first car: ", 1, (int) list->size) - 1;
     const int indexB = readInt("Index of the second car: ", 1, (int) list->size) - 1;
 
     if (indexA == indexB) {
-        printf("Indexes are the same.");
+        printf("Indexes are the same.\n");
         return;
     }
 
-    Node *nodeA = getAt(list, indexA);
-    Node *nodeB = getAt(list, indexB);
+    Car *carA = getAt(list, indexA);
+    Car *carB = getAt(list, indexB);
 
-    swapCars(nodeA, nodeB);
+    if (carA && carB) {
+        Car temp;
+        memcpy(&temp, carA, sizeof(Car));
+        memcpy(carA, carB, sizeof(Car));
+        memcpy(carB, &temp, sizeof(Car));
 
-    printf("Cars are swapped.");
+        printf("Cars are swapped.\n");
+    }
 }
 
 void handleSortList() {
-    typedef struct {
-        int index;
-        char *text;
-
-        int (*compare)(Node *a, Node *b);
-    } SortMenuItem;
-
-    const SortMenuItem items[] = {
-        {1, "Model", compareByModel},
-        {2, "Country", compareByCountry},
-        {3, "Power", compareByPower},
-        {4, "Cost", compareByCost},
-        {5, "Date", compareByDate},
-    };
-
-    const int itemsCount = sizeof(items) / sizeof(items[0]);
-
-    printf("Choose sorting criteria:\n");
-    for (int i = 0; i < itemsCount; i++) {
-        const SortMenuItem item = items[i];
-        printf("[%d] %-10s\n", item.index, item.text);
+    if (isEmptyList(list) || list->size < 2) {
+        printf("Not enough elements to sort.\n");
+        return;
     }
 
-    const int choice = readInt("Choice", 1, itemsCount);
-
-    printf("\nChoose sorting direction:\n");
-    printf("[1] Ascending\n");
-    printf("[2] Descending\n");
-    const int dir = readInt("Choice", 1, 2);
-
-    const SortDirection direction = (dir == 1) ? SORT_ASC : SORT_DESC;
+    const SortQuery query = getSortQuery();
 
     sortList(
         list,
-        items[choice - 1].compare,
-        swapCars,
-        direction
+        (int (*)(const void *, const void *)) query.function,
+        query.direction
     );
 
     printf("Sort completed!\n");
@@ -231,17 +180,22 @@ void handleSortList() {
 
 void handleFreeMemory() {
     if (!list) {
-        printf("Nothing to destroy.");
+        printf("Nothing to destroy.\n");
         return;
     }
 
-    destroyList(list, destroyCar);
+    destroyList(list, freeCar);
     list = NULL;
 
-    printf("List is destroyed.");
+    printf("List is destroyed.\n");
 }
 
 void handleGenerateList() {
+    if (!list) {
+        printf("Please initialize the list first.\n");
+        return;
+    }
+
     const char *models[] = {
         "Tesla Model 3", "BMW M4", "Audi A6", "Toyota Camry", "Ford Mustang", "Mercedes S-Class", "Honda Civic",
         "Porsche 911"
@@ -266,132 +220,13 @@ void handleGenerateList() {
         const int month = rand() % 12 + 1;
         const int day = rand() % 28 + 1;
 
-        sprintf(newCar->manufacturingDate, "%04d-%02d-%02d", year, month, day);
+        snprintf(newCar->manufacturingDate, sizeof(newCar->manufacturingDate), "%04d-%02d-%02d", year, month, day);
 
         newCar->enginePower = (float) rand() / (float) RAND_MAX * (600.0f - 100.0f) + 100.0f;
-
         newCar->cost = (double) rand() / (double) RAND_MAX * (100000.0 - 5000.0) + 5000.0;
 
-        append(list, &newCar->link);
+        append(list, newCar);
     }
 
     printf("Done! 10 cars added to the list.\n");
 }
-
-static void destroyCar(Node *node) {
-    Car *car = getCarByNode(node);
-    free(car);
-}
-
-static Car *readCar() {
-    Car *newCar = malloc(sizeof(Car));
-    if (newCar == NULL) {
-        return NULL;
-    }
-
-    char today[11];
-    getCurrentDate(today);
-
-    readString("Model", newCar->model, 2, 49);
-    readString("Country", newCar->country, 2, 29);
-
-    readDate("Manufacturing Date (YYYY-MM-DD)", newCar->manufacturingDate, "1885-01-01", today);
-
-    newCar->enginePower = readInt("Engine Power (HP)", 0, 1500);
-    newCar->cost = readDouble("Cost", 1, 1000000.0);
-
-    return newCar;
-}
-
-static void displayCar(Node *node, const int index) {
-    if (!node) {
-        return;
-    }
-
-    Car *c = getCarByNode(node);
-
-    printf("%-3d | %-20s | %-15s | %-10s | %-8d | %-10.2f\n",
-           index + 1, c->model, c->country, c->manufacturingDate, c->enginePower, c->cost);
-}
-
-static void swapCars(Node *nodeA, Node *nodeB) {
-    Car *carA = getCarByNode(nodeA);
-    Car *carB = getCarByNode(nodeB);
-    Car temp;
-
-    memcpy(&temp, carA, sizeof(Car));
-    memcpy(carA, carB, sizeof(Car));
-    memcpy(carB, &temp, sizeof(Car));
-
-    Node *tempNext = carA->link.next;
-    carA->link.next = carB->link.next;
-    carB->link.next = tempNext;
-}
-
-static Car *getCarByNode(Node *node) {
-    return listEntry(node, Car, link);
-}
-
-static Node *cloneCar(Node *node) {
-    const Car *oldCar = getCarByNode(node);
-
-    Car *newCar = malloc(sizeof(Car));
-    memcpy(newCar, oldCar, sizeof(Car));
-
-    // NOTE: The new copy's link must be cleaned so it doesn't
-    // point to the old list's neighbors.
-    newCar->link.next = NULL;
-
-    return &newCar->link;
-}
-
-/****************** Sorting Start ******************/
-static int compareByModel(Node *nodeA, Node *nodeB) {
-    const Car *carA = getCarByNode(nodeA);
-    const Car *carB = getCarByNode(nodeB);
-
-    return strcmp(carA->model, carB->model);
-}
-
-static int compareByCountry(Node *nodeA, Node *nodeB) {
-    const Car *carA = getCarByNode(nodeA);
-    const Car *carB = getCarByNode(nodeB);
-
-    return strcmp(carA->country, carB->country);
-}
-
-static int compareByDate(Node *nodeA, Node *nodeB) {
-    const Car *carA = getCarByNode(nodeA);
-    const Car *carB = getCarByNode(nodeB);
-
-    return strcmp(carA->manufacturingDate, carB->manufacturingDate);
-}
-
-static int compareByPower(Node *nodeA, Node *nodeB) {
-    const Car *carA = getCarByNode(nodeA);
-    const Car *carB = getCarByNode(nodeB);
-
-    return (carA->enginePower > carB->enginePower) - (carA->enginePower < carB->enginePower);
-}
-
-static int compareByCost(Node *nodeA, Node *nodeB) {
-    const Car *carA = getCarByNode(nodeA);
-    const Car *carB = getCarByNode(nodeB);
-
-    return (carA->cost > carB->cost) - (carA->cost < carB->cost);
-}
-
-/****************** Sorting End ******************/
-
-/**************** Searching Start ****************/
-bool matchModel(Node *node, void *ctx) {
-    const Car *c = getCarByNode(node);
-    return strcasestr(c->model, (char *) ctx) != NULL;
-}
-
-bool matchCountry(Node *node, void *ctx) {
-    const Car *c = getCarByNode(node);
-    return strcasestr(c->country, (char *) ctx) != NULL;
-}
-
-/**************** Searching End ****************/

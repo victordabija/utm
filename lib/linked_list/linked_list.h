@@ -4,7 +4,10 @@
 #include <stddef.h>
 #include <stdbool.h>
 
+#include "sort.h"
+
 typedef struct Node {
+    void *data;
     struct Node *next;
 } Node;
 
@@ -14,40 +17,32 @@ typedef struct List {
     size_t size;
 } List;
 
-#define listEntry(ptr, type, member) \
-((type *)((char *)(ptr) - offsetof(type, member)))
-
 List *createList(void);
 
-bool isEmpty(const List *list);
+bool isEmptyList(const List *list);
 
-void prepend(List *list, Node *node);
+bool prepend(List *list, void *data);
 
-void append(List *list, Node *node);
+bool append(List *list, void *data);
 
-void insertAt(List *list, Node *node, int index);
+bool insertAt(List *list, void *data, int index);
 
-Node *popFront(List *list);
+void *popFront(List *list);
 
-Node *popBack(List *list);
+void *popBack(List *list);
 
-Node *removeAt(List *list, int index);
+void *removeAt(List *list, int index);
 
-Node *getAt(const List *list, int index);
+void *getAt(const List *list, int index);
 
-Node *getLast(const List *l);
+void *getLast(const List *list);
 
-void destroyList(List *list, void (*cleanup)(Node *));
+void destroyList(List *list, void (*cleanup)(void *data));
 
-void each(List *list, void (*callback)(Node *, int));
+void each(List *list, void (*callback)(void *data, int index));
 
-List *filter(List *l, bool (*predicate)(Node *, void *), void *ctx, Node *(*clone)(Node *n));
+List *filter(List *l, bool (*predicate)(void *data, void *ctx), void *ctx, void *(*clone)(void *data));
 
-typedef enum {
-    SORT_ASC = 1,
-    SORT_DESC = -1
-} SortDirection;
-
-void sortList(List *list, int (*compare)(Node *a, Node *b), void (*swap)(Node *a, Node *b), SortDirection direction);
+void sortList(List *list, int (*compare)(const void *a, const void *b), SortDirection direction);
 
 #endif

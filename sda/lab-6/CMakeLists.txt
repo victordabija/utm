@@ -5,4 +5,6 @@ target_link_libraries(lab6
         linked_list
         app_menu
         application
+        sort
+        libcar
 )

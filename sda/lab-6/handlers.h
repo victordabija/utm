@@ -5,15 +5,6 @@
 
 extern List *list;
 
-typedef struct {
-    char model[50];
-    char country[30];
-    char manufacturingDate[11];
-    int enginePower;
-    double cost;
-    Node link;
-} Car;
-
 void handleCreateList();
 
 void handleInputData();

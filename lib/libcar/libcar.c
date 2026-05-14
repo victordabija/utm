@@ -180,3 +180,22 @@ char *getLabelByCompareType(const CompareType type, const bool capitalize) {
 
     return label;
 }
+
+void carToString(const void *record, char *buffer) {
+    const Car *car = record;
+    sprintf(buffer, "%s|%s|%s|%d|%.2f",
+            car->model, car->country, car->manufacturingDate,
+            car->enginePower, car->cost);
+}
+
+void carFromString(const char *string, void *record) {
+    Car *car = record;
+    sscanf(string, "%[^|]|%[^|]|%[^|]|%d|%lf",
+           car->model, car->country, car->manufacturingDate,
+           &car->enginePower, &car->cost);
+}
+
+void freeCar(void *record) {
+    Car *car = record;
+    free(car);
+}

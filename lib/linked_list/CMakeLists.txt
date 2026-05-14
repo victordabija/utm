@@ -6,3 +6,8 @@ target_include_directories(linked_list
         PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}
 )
+
+target_link_libraries(linked_list
+        PRIVATE
+        sort
+)

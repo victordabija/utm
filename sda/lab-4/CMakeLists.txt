@@ -6,5 +6,4 @@ target_link_libraries(lab4
         application
         txt_file
         libcar
-        sort
 )
